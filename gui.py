@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
+import time
+from scapy.layers.inet import IP, TCP, UDP, ICMP
 
 class IDSApp:
     def __init__(self, master, sniffer, detectors, logger):
@@ -61,21 +63,21 @@ class IDSApp:
         self.btn_stop.grid(row=0, column=5, padx=10, pady=5)
 
 
-    def alert_popup(self, message):
-        # บันทึก log และแสดงข้อความในหน้าต่าง log ทันที
-        self.logger.log(message)
-        self.log_text.insert(tk.END, f"[ALERT] {message}\n")
-        self.log_text.see(tk.END)
-        self.alert_list.insert(tk.END, f"[ALERT] {message}\n") 
-        self.alert_list.see(tk.END)
+    # def alert_popup(self, message):
+    #     # บันทึก log และแสดงข้อความในหน้าต่าง log ทันที
+    #     self.logger.log(message)
+    #     self.log_text.insert(tk.END, f"[ALERT] {message}\n")
+    #     self.log_text.see(tk.END)
+    #     self.alert_list.insert(tk.END, f"[ALERT] {message}\n") 
+    #     self.alert_list.see(tk.END)
         
-        # แสดง alert popup ใน thread แยก
-        def show_alert():
-            messagebox.showwarning("Alert", message)
+    #     # แสดง alert popup ใน thread แยก
+    #     def show_alert():
+    #         messagebox.showwarning("Alert", message)
         
-        alert_thread = threading.Thread(target=show_alert)
-        alert_thread.daemon = True
-        alert_thread.start()
+    #     alert_thread = threading.Thread(target=show_alert)
+    #     alert_thread.daemon = True
+    #     alert_thread.start()
 
     def start_ids(self):
         iface = self.interface_entry.get().strip() or None
@@ -89,6 +91,7 @@ class IDSApp:
             self.sniffer_thread.daemon = True
             self.sniffer_thread.start()
             self.log_text.insert(tk.END, "[INFO] IDS Started\n")
+            self.update_statistics()  # เริ่มการอัพเดทสถิติ
         except Exception as e:
             self.log_text.insert(tk.END, f"[ERROR] Failed to start IDS: {e}\n")
             self.log_text.see(tk.END)
@@ -102,8 +105,70 @@ class IDSApp:
             self.log_text.see(tk.END)
 
     def handle_packet(self, packet):
-        self.packet_list.insert(tk.END, f"{packet.summary()}\n")
-        self.packet_list.see(tk.END)
+        # Format packet information
+        if packet.haslayer(IP):
+            src_ip = packet[IP].src
+            dst_ip = packet[IP].dst
+            protocol = "TCP" if packet.haslayer(TCP) else "UDP" if packet.haslayer(UDP) else "ICMP" if packet.haslayer(ICMP) else "Other"
+            
+            # Get port information for TCP/UDP
+            if protocol in ["TCP", "UDP"]:
+                layer = packet[TCP] if protocol == "TCP" else packet[UDP]
+                src_port = layer.sport
+                dst_port = layer.dport
+                # Convert well-known ports to names
+                src_port = "https" if src_port == 443 else src_port
+                dst_port = "https" if dst_port == 443 else dst_port
+                packet_info = f"[{protocol}] {src_ip}:{src_port} → {dst_ip}:{dst_port}"
+            else:
+                packet_info = f"[{protocol}] {src_ip} → {dst_ip}"
+            
+            # Add packet flags for TCP
+            if protocol == "TCP":
+                flags = []
+                if packet[TCP].flags.A: flags.append("ACK")
+                if packet[TCP].flags.S: flags.append("SYN")
+                if packet[TCP].flags.F: flags.append("FIN")
+                if packet[TCP].flags.R: flags.append("RST")
+                if packet[TCP].flags.P: flags.append("PSH")
+                if flags:
+                    packet_info += f" [{','.join(flags)}]"
 
+            # Add timestamp
+            timestamp = time.strftime("%H:%M:%S")
+            formatted_packet = f"[{timestamp}] {packet_info}\n"
+            
+            # Display in Live Packets
+            self.packet_list.insert(tk.END, formatted_packet)
+            self.packet_list.see(tk.END)
+
+        # บันทึกข้อมูลสถิติโดยไม่แสดงผล
+        self.logger.log_packet(packet)
+
+        # วิเคราะห์แพ็กเก็ต
         for detector in self.detectors:
             detector.analyze(packet)
+
+    def update_statistics(self):
+        # อัพเดทสถิติทุก 5 วินาที
+        stats = (
+            "\n=== Statistics Update ===\n"
+            f"Packets Captured: {self.logger.packet_count}\n"
+            f"Protocol Distribution:\n"
+            f"  TCP: {self.logger.packet_types['TCP']}\n"
+            f"  UDP: {self.logger.packet_types['UDP']}\n"
+            f"  ICMP: {self.logger.packet_types['ICMP']}\n"
+            f"Top Source IPs (top 5):\n"
+            f"{self._format_ip_stats(self.logger.src_ips)}\n"
+            f"Top Destination IPs (top 5):\n"
+            f"{self._format_ip_stats(self.logger.dst_ips)}\n"
+            "========================\n"
+        )
+        self.log_text.insert(tk.END, stats)
+        self.log_text.see(tk.END)
+        self.master.after(5000, self.update_statistics)
+
+    def _format_ip_stats(self, ip_dict):
+        # Helper function to format IP statistics
+        sorted_ips = sorted(ip_dict.items(), key=lambda x: x[1], reverse=True)[:5]
+        return "\n".join([f"  {ip}: {count} packets" for ip, count in sorted_ips])
