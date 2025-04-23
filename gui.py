@@ -10,7 +10,7 @@ class IDSApp:
         self.logger = logger
 
         self.master.title("Mini IDS")
-        self.master.geometry("800x600")
+        self.master.geometry("900x650")
 
         self.create_widgets()
 
@@ -43,24 +43,49 @@ class IDSApp:
 
         self.tab_control.pack(expand=True, fill='both')
 
-        # Start / Stop buttons
-        self.btn_frame = ttk.Frame(self.master)
-        self.btn_start = ttk.Button(self.btn_frame, text="Start", command=self.start_ids)
-        self.btn_stop = ttk.Button(self.btn_frame, text="Stop", command=self.stop_ids)
-        self.btn_start.pack(side='left', padx=10, pady=10)
-        self.btn_stop.pack(side='left', padx=10, pady=10)
-        self.btn_frame.pack()
+        # Control Panel
+        control_frame = ttk.LabelFrame(self.master, text="Sniffing Control")
+        control_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Label(control_frame, text="Interface:").grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.interface_entry = ttk.Entry(control_frame)
+        self.interface_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(control_frame, text="Filter:").grid(row=0, column=2, padx=5, pady=5, sticky='w')
+        self.filter_entry = ttk.Entry(control_frame, width=40)
+        self.filter_entry.grid(row=0, column=3, padx=5, pady=5)
+
+        self.btn_start = ttk.Button(control_frame, text="Start", command=self.start_ids)
+        self.btn_start.grid(row=0, column=4, padx=10, pady=5)
+
+        self.btn_stop = ttk.Button(control_frame, text="Stop", command=self.stop_ids)
+        self.btn_stop.grid(row=0, column=5, padx=10, pady=5)
 
     def alert_popup(self, message):
-        messagebox.showwarning("Alert", message)
+        # บันทึก log และแสดงข้อความในหน้าต่าง log ทันที
         self.logger.log(message)
         self.log_text.insert(tk.END, f"[ALERT] {message}\n")
         self.log_text.see(tk.END)
+        self.alert_list.insert(tk.END, f"[ALERT] {message}\n") 
+        self.alert_list.see(tk.END)
+        
+        # แสดง alert popup ใน thread แยก
+        def show_alert():
+            messagebox.showwarning("Alert", message)
+        
+        alert_thread = threading.Thread(target=show_alert)
+        alert_thread.daemon = True
+        alert_thread.start()
 
     def start_ids(self):
+        iface = self.interface_entry.get().strip() or None
+        bpf_filter = self.filter_entry.get().strip() or None
         try:
             self.sniffer.set_callback(self.handle_packet)
-            self.sniffer_thread = threading.Thread(target=self.sniffer.start_sniffing)
+            self.sniffer_thread = threading.Thread(target=self.sniffer.start_sniffing, kwargs={
+                'iface': iface,
+                'bpf_filter': bpf_filter
+            })
             self.sniffer_thread.daemon = True
             self.sniffer_thread.start()
             self.log_text.insert(tk.END, "[INFO] IDS Started\n")
@@ -77,7 +102,6 @@ class IDSApp:
             self.log_text.see(tk.END)
 
     def handle_packet(self, packet):
-        # แสดงในหน้า GUI
         self.packet_list.insert(tk.END, f"{packet.summary()}\n")
         self.packet_list.see(tk.END)
 

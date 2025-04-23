@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 
 class ICMPFloodDetector:
-    def __init__(self, alert_callback, threshold=50, interval=5):
+    def __init__(self, alert_callback, threshold=30, interval=5):
         self.icmp_counts = defaultdict(int)
         self.timestamps = defaultdict(list)
         self.threshold = threshold
@@ -13,7 +13,7 @@ class ICMPFloodDetector:
     def analyze(self, packet):
         if not packet.haslayer(ICMP):
             return
-
+        print(f"ICMP packet detected: {packet.summary()}")  # พิมพ์ข้อมูลแพ็กเก็ต ICMP
         src_ip = packet[IP].src
         now = time.time()
         self.timestamps[src_ip].append(now)
