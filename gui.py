@@ -15,33 +15,32 @@ class IDSApp:
         self.create_widgets()
 
     def create_widgets(self):
-        self.tab_control = ttk.Notebook(self.master)
+        main_pane = tk.PanedWindow(self.master, orient=tk.VERTICAL)
+        main_pane.pack(expand=True, fill='both')
 
-        # Live Packets View
-        self.live_tab = ttk.Frame(self.tab_control)
-        self.packet_list = tk.Text(self.live_tab, height=30)
-        self.packet_list.pack(expand=True, fill='both')
-        self.tab_control.add(self.live_tab, text='Live Packets')
+        # Upper pane: Live Packets + Alerts
+        upper_pane = tk.PanedWindow(main_pane, orient=tk.HORIZONTAL)
+    
+        # Live Packets
+        live_frame = ttk.LabelFrame(upper_pane, text="Live Packets")
+        self.packet_list = tk.Text(live_frame, height=20)
+        self.packet_list.pack(expand=True, fill='both', padx=5, pady=5)
+        upper_pane.add(live_frame)
 
-        # Logs tab
-        self.log_tab = ttk.Frame(self.tab_control)
-        self.log_text = tk.Text(self.log_tab, height=30)
-        self.log_text.pack(expand=True, fill='both')
-        self.tab_control.add(self.log_tab, text='Logs')
+        # Alerts
+        alert_frame = ttk.LabelFrame(upper_pane, text="Alerts")
+        self.alert_list = tk.Text(alert_frame, height=20, fg="red")
+        self.alert_list.pack(expand=True, fill='both', padx=5, pady=5)
+        upper_pane.add(alert_frame)
 
-        # Alerts tab
-        self.alert_tab = ttk.Frame(self.tab_control)
-        self.alert_list = tk.Text(self.alert_tab, height=30, fg="red")
-        self.alert_list.pack(expand=True, fill='both')
-        self.tab_control.add(self.alert_tab, text='Alerts')
+        # Add upper pane to main
+        main_pane.add(upper_pane)
 
-        # Statistics tab
-        self.stats_tab = ttk.Frame(self.tab_control)
-        self.stats_text = tk.Text(self.stats_tab, height=30)
-        self.stats_text.pack(expand=True, fill='both')
-        self.tab_control.add(self.stats_tab, text='Statistics')
-
-        self.tab_control.pack(expand=True, fill='both')
+        # Lower pane: Logs
+        log_frame = ttk.LabelFrame(main_pane, text="Logs")
+        self.log_text = tk.Text(log_frame, height=10)
+        self.log_text.pack(expand=True, fill='both', padx=5, pady=5)
+        main_pane.add(log_frame)
 
         # Control Panel
         control_frame = ttk.LabelFrame(self.master, text="Sniffing Control")
@@ -60,6 +59,7 @@ class IDSApp:
 
         self.btn_stop = ttk.Button(control_frame, text="Stop", command=self.stop_ids)
         self.btn_stop.grid(row=0, column=5, padx=10, pady=5)
+
 
     def alert_popup(self, message):
         # บันทึก log และแสดงข้อความในหน้าต่าง log ทันที
