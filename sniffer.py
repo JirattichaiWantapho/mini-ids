@@ -26,6 +26,9 @@ class PacketSniffer:
         return not self.running
 
     def process_packet(self, packet):
-        self.packet_queue.put(packet)
-        if self.callback:
-            self.callback(packet)  # เรียก callback ถ้ามี
+        try:
+            self.packet_queue.put(packet)
+            if self.callback:
+                self.callback(packet)
+        except Exception as e:
+            print(f"[ERROR] Failed to process packet: {e}")
