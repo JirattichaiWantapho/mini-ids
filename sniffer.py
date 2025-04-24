@@ -41,7 +41,7 @@ class PacketSniffer:
 
     def process_packet(self, packet):
         try:
-            print(packet.summary())
+            # print(packet.summary())
             self.packet_queue.put(packet)
             if self.callback:
                 self.callback(packet)

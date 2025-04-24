@@ -10,6 +10,7 @@ class IDSApp:
         self.sniffer = sniffer
         self.detectors = detectors
         self.logger = logger
+        self.alert_popup = self.show_alert  # Add this line to create alias
 
         self.master.title("Mini IDS")
         self.master.geometry("900x650")
@@ -23,14 +24,20 @@ class IDSApp:
         # Upper pane: Live Packets + Alerts
         upper_pane = tk.PanedWindow(main_pane, orient=tk.HORIZONTAL)
     
-        # Live Packets
+        # Live Packets with Clear button
         live_frame = ttk.LabelFrame(upper_pane, text="Live Packets")
+        live_header = ttk.Frame(live_frame)
+        live_header.pack(fill='x', padx=5, pady=2)
+        ttk.Button(live_header, text="Clear", command=lambda: self.packet_list.delete(1.0, tk.END)).pack(side='right')
         self.packet_list = tk.Text(live_frame, height=20)
         self.packet_list.pack(expand=True, fill='both', padx=5, pady=5)
         upper_pane.add(live_frame)
 
-        # Alerts
+        # Alerts with Clear button
         alert_frame = ttk.LabelFrame(upper_pane, text="Alerts")
+        alert_header = ttk.Frame(alert_frame)
+        alert_header.pack(fill='x', padx=5, pady=2)
+        ttk.Button(alert_header, text="Clear", command=lambda: self.alert_list.delete(1.0, tk.END)).pack(side='right')
         self.alert_list = tk.Text(alert_frame, height=20, fg="red")
         self.alert_list.pack(expand=True, fill='both', padx=5, pady=5)
         upper_pane.add(alert_frame)
@@ -38,8 +45,11 @@ class IDSApp:
         # Add upper pane to main
         main_pane.add(upper_pane)
 
-        # Lower pane: Logs
+        # Lower pane: Logs with Clear button
         log_frame = ttk.LabelFrame(main_pane, text="Logs")
+        log_header = ttk.Frame(log_frame)
+        log_header.pack(fill='x', padx=5, pady=2)
+        ttk.Button(log_header, text="Clear", command=lambda: self.log_text.delete(1.0, tk.END)).pack(side='right')
         self.log_text = tk.Text(log_frame, height=10)
         self.log_text.pack(expand=True, fill='both', padx=5, pady=5)
         main_pane.add(log_frame)
@@ -62,22 +72,21 @@ class IDSApp:
         self.btn_stop = ttk.Button(control_frame, text="Stop", command=self.stop_ids)
         self.btn_stop.grid(row=0, column=5, padx=10, pady=5)
 
-
-    # def alert_popup(self, message):
-    #     # บันทึก log และแสดงข้อความในหน้าต่าง log ทันที
-    #     self.logger.log(message)
-    #     self.log_text.insert(tk.END, f"[ALERT] {message}\n")
-    #     self.log_text.see(tk.END)
-    #     self.alert_list.insert(tk.END, f"[ALERT] {message}\n") 
-    #     self.alert_list.see(tk.END)
+    def show_alert(self, message):
+        # บันทึก log และแสดงข้อความในหน้าต่าง log ทันที
+        self.logger.log(message)
+        self.log_text.insert(tk.END, f"[ALERT] {message}\n")
+        self.log_text.see(tk.END)
+        self.alert_list.insert(tk.END, f"[ALERT] {message}\n") 
+        self.alert_list.see(tk.END)
         
-    #     # แสดง alert popup ใน thread แยก
-    #     def show_alert():
-    #         messagebox.showwarning("Alert", message)
+        # แสดง alert popup ใน thread แยก
+        # def display_warning():
+        #     messagebox.showwarning("Alert", message)
         
-    #     alert_thread = threading.Thread(target=show_alert)
-    #     alert_thread.daemon = True
-    #     alert_thread.start()
+        # alert_thread = threading.Thread(target=display_warning)
+        # alert_thread.daemon = True
+        # alert_thread.start()
 
     def start_ids(self):
         iface = self.interface_entry.get().strip() or None

@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 
 class ICMPFloodDetector:
-    def __init__(self, alert_callback, threshold=30, interval=5):
+    def __init__(self, alert_callback, threshold=15, interval=5):
         self.icmp_counts = defaultdict(int)
         self.timestamps = defaultdict(list)
         self.threshold = threshold
