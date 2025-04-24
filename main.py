@@ -11,7 +11,7 @@ from queue import Queue
 import time
 
 # Webhook URL (จะได้จาก ngrok)
-WEBHOOK_URL = "http://localhost:5000/webhook"
+WEBHOOK_URL = "https://mini-ids-webhook.onrender.com"
 
 # Initialize webhook
 init_webhook(WEBHOOK_URL)
