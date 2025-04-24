@@ -6,9 +6,15 @@ from detectors.syn_flood import SYNFloodDetector
 from detectors.brute_force import BruteForceDetector
 from logger import Logger
 from gui import IDSApp
-from alert import alert_console
+from alert import alert_console, init_webhook
 from queue import Queue
 import time
+
+# Webhook URL (จะได้จาก ngrok)
+WEBHOOK_URL = "http://localhost:5000/webhook"
+
+# Initialize webhook
+init_webhook(WEBHOOK_URL)
 
 # เตรียม Logger
 logger = Logger()
