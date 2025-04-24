@@ -13,7 +13,6 @@ class ICMPFloodDetector:
     def analyze(self, packet):
         if not packet.haslayer(ICMP):
             return
-        print(f"ICMP packet detected: {packet.summary()}")  # พิมพ์ข้อมูลแพ็กเก็ต ICMP
         src_ip = packet[IP].src
         now = time.time()
         self.timestamps[src_ip].append(now)

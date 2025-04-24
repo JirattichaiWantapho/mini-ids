@@ -20,7 +20,6 @@ class Logger:
     def log_packet(self, packet):
         self.packet_count += 1
         
-        # บันทึกประเภทแพ็กเก็ต
         if packet.haslayer(TCP):
             self.packet_types["TCP"] += 1
         elif packet.haslayer(UDP):
@@ -28,12 +27,10 @@ class Logger:
         elif packet.haslayer(ICMP):
             self.packet_types["ICMP"] += 1
         
-        # บันทึก IP ต้นทางและปลายทาง
         if packet.haslayer(IP):
             self.src_ips[packet[IP].src] += 1
             self.dst_ips[packet[IP].dst] += 1
 
-        # สร้างข้อความ log
         stats = (
             f"Packet #{self.packet_count} | "
             f"Type: {packet.summary()} | "

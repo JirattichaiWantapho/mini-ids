@@ -3,7 +3,7 @@ from collections import defaultdict
 import time
 
 class SYNFloodDetector:
-    def __init__(self, alert_callback, threshold=100, interval=5):
+    def __init__(self, alert_callback, threshold=10, interval=5):
         self.syn_counts = defaultdict(int)
         self.timestamps = defaultdict(list)
         self.threshold = threshold
@@ -18,7 +18,6 @@ class SYNFloodDetector:
         now = time.time()
         self.timestamps[src_ip].append(now)
 
-        # ลบ timestamp เก่าที่อยู่นอกช่วง interval
         self.timestamps[src_ip] = [t for t in self.timestamps[src_ip] if now - t <= self.interval]
 
         count = len(self.timestamps[src_ip])

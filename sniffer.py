@@ -10,7 +10,6 @@ class PacketSniffer:
         self.sniff_thread = None
 
     def set_callback(self, callback):
-        """Set a callback function to process packets."""
         self.callback = callback
 
     def start_sniffing(self, iface=None, bpf_filter=None):
@@ -41,7 +40,6 @@ class PacketSniffer:
 
     def process_packet(self, packet):
         try:
-            # print(packet.summary())
             self.packet_queue.put(packet)
             if self.callback:
                 self.callback(packet)

@@ -17,16 +17,13 @@ class PortScanDetector:
         dst_port = packet[TCP].dport
         now = time.time()
 
-        # เก็บข้อมูลพอร์ตที่ถูกสแกน
         self.scan_data[src_ip].append((dst_port, now))
 
-        # ลบข้อมูลเก่าที่อยู่นอกช่วงเวลา
         self.scan_data[src_ip] = [
             (port, timestamp) for port, timestamp in self.scan_data[src_ip]
             if now - timestamp <= self.interval
         ]
 
-        # ตรวจสอบว่ามีการสแกนพอร์ตเกิน threshold หรือไม่
         scanned_ports = {port for port, _ in self.scan_data[src_ip]}
         if len(scanned_ports) >= self.threshold:
             self.alert_callback(

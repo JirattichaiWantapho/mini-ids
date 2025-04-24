@@ -10,25 +10,20 @@ from alert import alert_console, init_webhook
 from queue import Queue
 import time
 
-# Webhook URL (จะได้จาก ngrok)
-WEBHOOK_URL = "https://mini-ids-webhook.onrender.com"
+WEBHOOK_URL = "https://mini-ids-webhook.onrender.com/webhook"
 
-# Initialize webhook
 init_webhook(WEBHOOK_URL)
 
-# เตรียม Logger
 logger = Logger()
 
-# เตรียม Alert Callback
 def alert_callback(message):
-    alert_console(message)  # แสดงใน console
-    app.alert_popup(message)  # แสดงใน GUI
+    print(f"[DEBUG] alert_callback called with message: {message}")
+    alert_console(message)
+    app.alert_popup(message)
 
-# เตรียม Packet Queue และ Sniffer
 packet_queue = Queue()
 sniffer = PacketSniffer(packet_queue)
 
-# เตรียม Detectors
 icmp_flood_detector = ICMPFloodDetector(alert_callback)
 port_scan_detector = PortScanDetector(alert_callback)
 syn_flood_detector = SYNFloodDetector(alert_callback)
@@ -36,12 +31,9 @@ brute_force_detector = BruteForceDetector(alert_callback)
 
 detectors = [icmp_flood_detector, port_scan_detector, syn_flood_detector, brute_force_detector]
 
-# สร้าง GUI
 root = tk.Tk()
 app = IDSApp(root, sniffer, detectors, logger)
 
-# เริ่ม GUI
 root.mainloop()
-
 
 print("[+] Sniffer started. Press Ctrl+C to stop.")

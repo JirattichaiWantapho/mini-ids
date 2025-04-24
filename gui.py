@@ -10,7 +10,7 @@ class IDSApp:
         self.sniffer = sniffer
         self.detectors = detectors
         self.logger = logger
-        self.alert_popup = self.show_alert  # Add this line to create alias
+        self.alert_popup = self.show_alert 
 
         self.master.title("Mini IDS")
         self.master.geometry("900x650")
@@ -21,10 +21,8 @@ class IDSApp:
         main_pane = tk.PanedWindow(self.master, orient=tk.VERTICAL)
         main_pane.pack(expand=True, fill='both')
 
-        # Upper pane: Live Packets + Alerts
         upper_pane = tk.PanedWindow(main_pane, orient=tk.HORIZONTAL)
     
-        # Live Packets with Clear button
         live_frame = ttk.LabelFrame(upper_pane, text="Live Packets")
         live_header = ttk.Frame(live_frame)
         live_header.pack(fill='x', padx=5, pady=2)
@@ -33,7 +31,6 @@ class IDSApp:
         self.packet_list.pack(expand=True, fill='both', padx=5, pady=5)
         upper_pane.add(live_frame)
 
-        # Alerts with Clear button
         alert_frame = ttk.LabelFrame(upper_pane, text="Alerts")
         alert_header = ttk.Frame(alert_frame)
         alert_header.pack(fill='x', padx=5, pady=2)
@@ -42,10 +39,8 @@ class IDSApp:
         self.alert_list.pack(expand=True, fill='both', padx=5, pady=5)
         upper_pane.add(alert_frame)
 
-        # Add upper pane to main
         main_pane.add(upper_pane)
 
-        # Lower pane: Logs with Clear button
         log_frame = ttk.LabelFrame(main_pane, text="Logs")
         log_header = ttk.Frame(log_frame)
         log_header.pack(fill='x', padx=5, pady=2)
@@ -54,7 +49,6 @@ class IDSApp:
         self.log_text.pack(expand=True, fill='both', padx=5, pady=5)
         main_pane.add(log_frame)
 
-        # Control Panel
         control_frame = ttk.LabelFrame(self.master, text="Sniffing Control")
         control_frame.pack(fill='x', padx=10, pady=10)
 
@@ -73,21 +67,12 @@ class IDSApp:
         self.btn_stop.grid(row=0, column=5, padx=10, pady=5)
 
     def show_alert(self, message):
-        # บันทึก log และแสดงข้อความในหน้าต่าง log ทันที
         self.logger.log(message)
         self.log_text.insert(tk.END, f"[ALERT] {message}\n")
         self.log_text.see(tk.END)
         self.alert_list.insert(tk.END, f"[ALERT] {message}\n") 
         self.alert_list.see(tk.END)
         
-        # แสดง alert popup ใน thread แยก
-        # def display_warning():
-        #     messagebox.showwarning("Alert", message)
-        
-        # alert_thread = threading.Thread(target=display_warning)
-        # alert_thread.daemon = True
-        # alert_thread.start()
-
     def start_ids(self):
         iface = self.interface_entry.get().strip() or None
         bpf_filter = self.filter_entry.get().strip() or None
@@ -100,7 +85,7 @@ class IDSApp:
             self.sniffer_thread.daemon = True
             self.sniffer_thread.start()
             self.log_text.insert(tk.END, "[INFO] IDS Started\n")
-            self.update_statistics()  # เริ่มการอัพเดทสถิติ
+            self.update_statistics()
         except Exception as e:
             self.log_text.insert(tk.END, f"[ERROR] Failed to start IDS: {e}\n")
             self.log_text.see(tk.END)
@@ -114,25 +99,22 @@ class IDSApp:
             self.log_text.see(tk.END)
 
     def handle_packet(self, packet):
-        # Format packet information
         if packet.haslayer(IP):
             src_ip = packet[IP].src
             dst_ip = packet[IP].dst
             protocol = "TCP" if packet.haslayer(TCP) else "UDP" if packet.haslayer(UDP) else "ICMP" if packet.haslayer(ICMP) else "Other"
             
-            # Get port information for TCP/UDP
             if protocol in ["TCP", "UDP"]:
                 layer = packet[TCP] if protocol == "TCP" else packet[UDP]
                 src_port = layer.sport
                 dst_port = layer.dport
-                # Convert well-known ports to names
+
                 src_port = "https" if src_port == 443 else src_port
                 dst_port = "https" if dst_port == 443 else dst_port
                 packet_info = f"[{protocol}] {src_ip}:{src_port} → {dst_ip}:{dst_port}"
             else:
                 packet_info = f"[{protocol}] {src_ip} → {dst_ip}"
             
-            # Add packet flags for TCP
             if protocol == "TCP":
                 flags = []
                 if packet[TCP].flags.A: flags.append("ACK")
@@ -143,23 +125,18 @@ class IDSApp:
                 if flags:
                     packet_info += f" [{','.join(flags)}]"
 
-            # Add timestamp
             timestamp = time.strftime("%H:%M:%S")
             formatted_packet = f"[{timestamp}] {packet_info}\n"
             
-            # Display in Live Packets
             self.packet_list.insert(tk.END, formatted_packet)
             self.packet_list.see(tk.END)
 
-        # บันทึกข้อมูลสถิติโดยไม่แสดงผล
         self.logger.log_packet(packet)
 
-        # วิเคราะห์แพ็กเก็ต
         for detector in self.detectors:
             detector.analyze(packet)
 
     def update_statistics(self):
-        # อัพเดทสถิติทุก 5 วินาที
         stats = (
             "\n=== Statistics Update ===\n"
             f"Packets Captured: {self.logger.packet_count}\n"
@@ -178,6 +155,5 @@ class IDSApp:
         self.master.after(5000, self.update_statistics)
 
     def _format_ip_stats(self, ip_dict):
-        # Helper function to format IP statistics
         sorted_ips = sorted(ip_dict.items(), key=lambda x: x[1], reverse=True)[:5]
         return "\n".join([f"  {ip}: {count} packets" for ip, count in sorted_ips])
